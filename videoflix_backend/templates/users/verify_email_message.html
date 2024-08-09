@@ -1,0 +1,14 @@
+<div>
+    <h2>Willkommen bei Videoflix</h2>
+    <div>
+        <p>Hi {{ user.username }},</p>
+        <p>Du hast dir erfolgreich ein Konto bei Videoflix.walter-doni.at erstellt. Bitte bestätige auf 
+        <a href="https://{{ domain }}{% url 'verify-email-confirm' uidb64=uid token=token %}">
+            Jetzt loslegen.
+        </a>
+        <p>Oder kopiere den Link hier unterhalb</p>
+        <p>https://{{ domain }}{% url 'verify-email-confirm' uidb64=uid token=token %}</p>
+
+        <p> Danke :) </p>
+        <p>Walter Doni</p>
+    </div>
