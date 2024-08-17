@@ -149,8 +149,15 @@ class LoginView(ObtainAuthToken):
         # Authenticate user based on email
         try:
             user = User.objects.get(email=email)
+
+            # Check if email is verified
+            if not user.email_is_verified:
+                return Response({'error': 'Email not verified. Please check your email and verify your account.'}, status=400)
+
+            # Check if the password is correct
             if not user.check_password(password):
                 return Response({'error': 'Invalid credentials'}, status=400)
+
         except User.DoesNotExist:
             return Response({'error': 'Invalid credentials'}, status=400)
 
