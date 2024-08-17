@@ -44,17 +44,25 @@ SECURITY_PASSWORD_SALT = os.environ.get('security_password_salt')
 DEFAULT_FROM_EMAIL = os.environ.get('default_from_email')
 SITE_URL = os.environ.get('site_url')
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
+
 
 ALLOWED_HOSTS = [
-    'localhost', '127.0.0.1', '127.0.0.1:8000', '127.0.0.1:5500', '34.170.108.38', '35.232.116.50', 'videoflix.walter-doni-at'
+    'localhost', '127.0.0.1',
+    '34.170.108.38', '35.232.116.50', 'videoflix-backend.walter-doni.at', 'videoflix.walter-doni.at'
 ]
 
-CORS_ALLOWED_ORIGINS = [ 'http://127.0.0.1:5500', 'http://localhost:5500', "http://localhost:4200"  ]
 
-CORS_ORIGIN_ALLOW_ALL = True 
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    'http://localhost:4200',
+    'https://videoflix-backend.walter-doni.at',
+    'https://videoflix.walter-doni.at',
+]
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -90,18 +98,17 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'user.CustomUser'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',  
-    
-   
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'videoflix_backend.urls'
 
@@ -180,7 +187,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Media -> wird für die Videos benötigt
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  
@@ -232,3 +239,5 @@ REST_FRAMEWORK = {
     ],
 }
 
+CELERY_BROKER_URL = 'redis://:my_redis_password@127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://:my_redis_password@127.0.0.1:6379/0'

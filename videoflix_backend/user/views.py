@@ -7,7 +7,7 @@ from .models import CustomUser
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from .forms import UserRegisterForm
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model,authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -16,9 +16,13 @@ from .tokens import account_activation_token
 from django.core.mail import EmailMessage
 from django.contrib import messages
 from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
-
-# so we can reference the user model as User instead of CustomUser
+#Reference for using the user model as User instead of CustomUser
 User = get_user_model()
 
 class SignupView(View):
@@ -31,7 +35,7 @@ class SignupView(View):
 
         # Form validation with directly provided data
         form = UserRegisterForm(data={'email': email, 'password': password, 'username': username})
-
+        
         if form.is_valid():
             email = form.cleaned_data.get('email')
 
@@ -63,8 +67,7 @@ class SignupView(View):
             errors = form.errors.as_data()
             error_message = ", ".join([f"{field}: {error[0].message}" for field, error in errors.items()])
             return JsonResponse({'error': f"Validation error: {error_message}"}, status=400)
-
-
+    
 # Verify a new account via email confirmation
 
 
@@ -86,9 +89,57 @@ def verify_email_confirm(request, uidb64, token):
 def verify_email_complete(request):
     return redirect('https://videoflix.walter-doni.at')
 
-
 # -- end verify account
 
+# Password reset - start
+
+class PasswordResetRequestView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        email = data.get('email')
+
+        user = CustomUser.objects.filter(email=email).first()
+
+        if user:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_link = f'https://videoflix.walter-doni.at/reset-password/{uid}/{token}'
+            send_mail(
+                'Setze dein Passwort zurück',
+                f'Bitte klicke auf diesen Link, um dein Passwort zurückzusetzen: {reset_link}',
+                'walter.doni1991@gmail.com',
+                [user.email],
+                fail_silently=False,
+            )
+            return JsonResponse({'message': 'Password reset email sent'}, status=200)
+        else:
+            return JsonResponse({'error': 'No user found with this email address'}, status=400)
+
+class PasswordResetConfirmView(View):
+    def post(self, request, uidb64, token):
+        try:
+          
+            data = json.loads(request.body)
+            new_password = data.get('new_password')
+            
+            if not isinstance(new_password, str):
+                return JsonResponse({'error': 'Password must be a string'}, status=400)
+
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(pk=uid)
+  
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+       
+        if user is not None and default_token_generator.check_token(user, token):
+            user.set_password(new_password) 
+            user.save()
+            return JsonResponse({'message': 'Password has been reset'}, status=200)
+        else:
+            return JsonResponse({'error': 'Invalid link'}, status=400)
+
+# Password reset - end
+  
 class LoginView(ObtainAuthToken):
 
     def post(self, request):
