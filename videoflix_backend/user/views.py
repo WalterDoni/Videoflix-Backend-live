@@ -41,7 +41,8 @@ class SignupView(View):
 
             if User.objects.filter(email=email).exists():
                 return JsonResponse({'error': 'Email already exists'}, status=409)
-
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({'error': 'Username already exists'}, status=409)
             # Create user and authenticate
             user = form.save(commit=False)
             password = form.cleaned_data.get('password')
@@ -152,14 +153,14 @@ class LoginView(ObtainAuthToken):
 
             # Check if email is verified
             if not user.email_is_verified:
-                return Response({'error': 'Email not verified. Please check your email and verify your account.'}, status=400)
+                return Response({'error': 'Email not verified.'}, status=400)
 
             # Check if the password is correct
             if not user.check_password(password):
-                return Response({'error': 'Invalid credentials'}, status=400)
+                return Response({'error': 'Password is wrong.'}, status=400)
 
         except User.DoesNotExist:
-            return Response({'error': 'Invalid credentials'}, status=400)
+            return Response({'error': 'Email does not exist.'}, status=400)
 
         # Create or retrieve token
         token, _ = Token.objects.get_or_create(user=user)
